@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 @Data
 @RequiredArgsConstructor
 @AllArgsConstructor
@@ -14,4 +16,5 @@ public class FilmParametersDTO {
     private Integer yearTo;
     private String keyword;
     private Integer page;
+    private List<String> genres;
 }

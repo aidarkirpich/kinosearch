@@ -2,17 +2,17 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.FilmParametersDTO;
 import com.example.demo.model.Film;
-import com.example.demo.repository.FilmRepository;
-import com.example.demo.service.FilmService;
+import com.example.demo.service.FilmDBService;
+import com.example.demo.service.FilmMailService;
+import com.example.demo.service.FilmScheduler;
+import com.example.demo.service.FilmApiService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -20,45 +20,49 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FilmController {
 
-    @Autowired
-    private FilmService filmService;
+    private final FilmApiService filmApiService;
 
-    @Autowired
-    private FilmRepository filmRepository;
+    private final FilmScheduler filmScheduler;
 
-    @Autowired
-    public FilmController(FilmService filmService, FilmRepository filmRepository) {
-        this.filmService = filmService;
-        this.filmRepository = filmRepository;
+    private final FilmMailService filmMailService;
+
+    private final FilmDBService filmDBService;
+
+    @PostMapping(value = "/sendfilmstoqueue")
+    public ResponseEntity<List<Film>> sendFilmsToQueue() {
+        filmScheduler.sendFilmsByGenre();
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/sendfilmstomail", consumes = "application/json")
+    public void sendFilmsToMail(@RequestBody List<Film> films) {
+        try {
+            filmMailService.sendFilmsToMail(films);
+        } catch (MessagingException e) {
+            System.out.println("Messaging Exception");
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            System.out.println("IO Exception");
+            throw new RuntimeException(e);
+        }
     }
 
     @GetMapping()
     public ResponseEntity<List<Film>> getAllFilmsFromApi(FilmParametersDTO filmParametersDTO) {
-        return new ResponseEntity<List<Film>>(filmService.getAllFilms(filmParametersDTO), HttpStatus.OK);
+        return new ResponseEntity<>(filmApiService.checkFilmsNotExistedAndSaveAll(filmParametersDTO), HttpStatus.OK);
     }
 
     @GetMapping(value = "/getfilms")
-    public Page<Film> getFilmsFromDB(@RequestParam(required = false) Integer yearFrom,
-                                     @RequestParam(required = false) Integer yearTo,
-                                     @RequestParam(required = false) Integer ratingFrom,
-                                     @RequestParam(required = false) Integer ratingTo,
-                                     @RequestParam(required = false) String keyword,
-                                     @RequestParam(defaultValue = "0") int page,
-                                     @RequestParam(defaultValue = "10") int size) {
-        FilmParametersDTO filmParametersDTO = new FilmParametersDTO();
-        filmParametersDTO.setYearFrom(yearFrom);
-        filmParametersDTO.setYearTo(yearTo);
-        filmParametersDTO.setRatingFrom(ratingFrom);
-        filmParametersDTO.setRatingTo(ratingTo);
-        filmParametersDTO.setKeyword(keyword);
+    public ResponseEntity<List<Film>> getFilmsFromDB(FilmParametersDTO filmParametersDTO, @RequestParam(required = false, defaultValue = "10") int pageSize) {
 
-        List<Film> filmsinDB = filmRepository.findAll();
-        List<Film> listFilms = filmService.filterFilms(filmsinDB, filmParametersDTO);
-        Pageable pageable = PageRequest.of(page, size);
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), listFilms.size());
-        Page<Film> filmPage = new PageImpl<>(listFilms.subList(start, end), pageable, listFilms.size());
-
-        return filmPage;
+        Pageable pageable;
+        if (pageSize <= 0) {
+            pageable = Pageable.unpaged();
+        } else {
+            pageable = Pageable.ofSize(pageSize);
+        }
+        List<Film> filmList = filmDBService.exportFilmsFromDataBaseByParameters(filmParametersDTO, pageable);
+        return ResponseEntity.ok(filmList);
     }
+
 }

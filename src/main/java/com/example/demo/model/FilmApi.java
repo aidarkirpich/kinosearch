@@ -1,38 +1,39 @@
 package com.example.demo.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
 import java.io.Serializable;
 import java.util.List;
 
 @Data
-@Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "films_table")
-public class Film implements Serializable {
+public class FilmApi implements Serializable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name")
+    @JsonProperty("nameOriginal")
     private String name;
 
-    @Column(name = "film_id")
+    @JsonProperty("kinopoiskId")
     private Long filmId;
 
-    @Column(name = "year")
+    @JsonProperty("year")
     private int year;
 
-    @Column(name = "rating")
+    @JsonProperty("ratingImdb")
     private double rating;
 
-    @Column(name = "description")
+    @JsonProperty("description")
     private String description;
 
+    @JsonProperty("genres")
     @JdbcTypeCode(SqlTypes.JSON)
     private List<Genre> genres;
+
 }

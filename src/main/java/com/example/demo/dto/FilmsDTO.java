@@ -1,6 +1,6 @@
 package com.example.demo.dto;
 
-import com.example.demo.model.Film;
+import com.example.demo.model.FilmApi;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
@@ -10,5 +10,5 @@ import java.util.List;
 public class FilmsDTO {
     private Long total;
     private Long totalPages;
-    private List<Film> items;
+    private List<FilmApi> items;
 }

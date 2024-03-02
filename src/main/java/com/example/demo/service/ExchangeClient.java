@@ -2,8 +2,10 @@ package com.example.demo.service;
 
 import com.example.demo.dto.FilmParametersDTO;
 import com.example.demo.dto.FilmsDTO;
-import com.example.demo.model.Film;
+import com.example.demo.model.FilmApi;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
@@ -13,12 +15,17 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.Collections;
 import java.util.List;
 
-@RequiredArgsConstructor
 @Component
+@RequiredArgsConstructor
 public class ExchangeClient {
+
     private final RestTemplate restTemplate;
-    private String url = "https://kinopoiskapiunofficial.tech/api/v2.2/films";
-    private String key = "14602616-5f8e-43da-b399-baed78e26cde";
+
+    @Value("${rest.api.base-url}")
+    private String url;
+
+    @Value("${rest.api.base-key}")
+    private String key;
 
     public String urlBuilder(FilmParametersDTO filmsParameters) {
         String urlBuilder = UriComponentsBuilder.fromUriString(url)
@@ -41,7 +48,7 @@ public class ExchangeClient {
         return header;
     }
 
-    public List<Film> getFilms(FilmParametersDTO fpdto) {
+    public List<FilmApi> getFilms(FilmParametersDTO fpdto) {
         try {
             HttpEntity<FilmsDTO> httpEntity = new HttpEntity<>(getFilmHeader());
             ResponseEntity<FilmsDTO> response = restTemplate
